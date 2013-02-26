@@ -1,3 +1,4 @@
+#Implementation of Karger's Algorithm to find min-cut of a graph
 class Mincut
   @adj_list
   
