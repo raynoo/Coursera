@@ -4,115 +4,180 @@
 require_relative 'stack'
 
 class SCC
-  attr_accessor :adj_list, :current_finish_time, #:current_leader, 
+  attr_accessor :adj_list, :current_finish_time, 
     :dfs_stack, :finish_time_list, :leader_node_list,
     :explored_list
   
   def initialize
     self.adj_list = []
-    self.current_finish_time = 0
+    @current_finish_time = 0
     self.explored_list = Hash.new
     self.finish_time_list = Hash.new
     self.dfs_stack = Stack.new
+    self.leader_node_list = Hash.new
   end
   
   def start
-    self.read_g()
-    self.DFS_loop()
+    #process G-reverse and note the finish times
+    self.read_g 'reverse'
+    p 'read reverse'
+    self.DFS_loop_grev()
+    p @current_finish_time
+    
+    self.adj_list = []
+    self.explored_list = Hash.new
+    self.dfs_stack = Stack.new
+    
+    #process G in the order of above finish times
+    self.read_g 'normal'
+    p 'read normal'
+    self.DFS_loop_g()
+#    p self.leader_node_list.keys[-1], self.leader_node_list.values[-1]
+    
+#    self.leader_node_list.sort_by { |key, value| value.length }.reverse[0..4]
+    
   end
   
-  def read_g
-    File.open('4test_4.txt','r').each_line do |line|
+  def read_g whichway
+    File.open('4input.txt','r').each_line do |line|
       line = line.chomp.split(/[\s\t]/).map { |x| x.to_i }
       
-      if self.adj_list[line[0]] then
-        edges = adj_list[line[0]]
-        edges += [line[1]]
+      if whichway == 'reverse'
+        if self.adj_list[line[1]]
+          edges = adj_list[line[1]]
+          edges += [line[0]]
+        else
+          edges = [line[0]]
+        end
+        self.adj_list[line[1]] = edges
+      
       else
-        edges = [line[1]]
+        if self.adj_list[line[0]]
+          edges = adj_list[line[0]]
+          edges += [line[1]]
+        else
+          edges = [line[1]]
+        end
+        self.adj_list[line[0]] = edges
       end
-      self.adj_list[line[0]] = edges
     end
   end
   
-  def read_grev
-    File.open('4test_4.txt','r').each_line do |line|
-      line = line.chomp.split(/[\s\t]/).map { |x| x.to_i }
-      
-      if self.adj_list[line[1]] then
-        edges = adj_list[line[1]]
-        edges += [line[0]]
-      else
-        edges = [line[0]]
-      end
-      self.adj_list[line[1]] = edges
-    end
-  end
-  
-  def DFS_loop
-    self.adj_list().each_with_index { |val, i|
-      node = i + 1
-      @current_leader = node
-      if self.explored_list.include?(node)
-        n = self.explored_list[node]
-      else
-        n = Node.new(node)
-      end
-      DFS n unless n.explored
+  #iterate in the same order as finish time list keys
+  def DFS_loop_g
+    self.finish_time_list.sort.reverse.each { |time, node|
+        next if self.adj_list[node].nil?
+        @current_leader = node
+        if !self.explored_list.has_key?(node) then n = Node.new(node); iDFS_g n; end
     }
-    p self.finish_time_list()
   end
   
-  def DFS node
-    node.explored = true
+  #to keep track of finish times (topological ordering)
+  def DFS_loop_grev
+    self.adj_list().each_with_index { |val, i|
+      self.adj_list[i] = [] if self.adj_list[i].nil?
+      #call i-dfs if a node hasn't been explored yet
+      if !self.explored_list.has_key?(i) then n = Node.new(i); iDFS_grev n; end
+    }
+  end
+  
+  def iDFS_g node
     self.explored_list[node.label] = node
-    node.leader = @current_leader
-    
-    if self.adj_list[node.label]
-      self.adj_list[node.label].each { |j| DFS Node.new(j) unless self.explored_list().include?(j) }
-    end
-    self.current_finish_time = self.current_finish_time + 1
-    self.finish_time_list[self.current_finish_time] = node #list to track finishing times
-    
-  end
-  
-  def iDFS node
-    node.explored = true
     self.dfs_stack().push(node)
-    node.leader = @current_leader
+    self.leader_node_list[@current_leader] = [node.label]
     
-    #iterate until stack is empty
     until self.dfs_stack.empty?
-      #peek (at) node on stack
-      top_guy = self.dfs_stack.peek 
+      top_guy = self.dfs_stack.peek
+#      p top_guy
       
-      #iterate over adjacency list of top_guy
-      ##if the node present in adjacency list, and its unexplored,
-      ##then mark it explored and push into stack
-      self.adj_list[top_guy.label].each { |n| 
-        if self.adj_list[n] and !n.explored
-          n.explored = true
-          self.dfs_stack.push(n)
-        
-        elsif !self.adj_list[n]
-          
-          self.dfs_stack.pop
-        end 
-      }
-      
+      l = self.adj_list[top_guy.label]
+      #if top guy has no neighbors, pop him out
+      if l.nil? or l.empty?
+        self.dfs_stack.pop
+      else
+        self.adj_list[top_guy.label].each { |eachnode|
+          if self.explored_list().has_key?(eachnode)
+#            has_unvisited_node = false
+#            self.adj_list[top_guy.label].each { |i| has_unvisited_node = true unless self.explored_list().has_key?(i) }
+#            
+#            if has_unvisited_node then next
+            if !self.adj_list[top_guy.label].empty?
+              next
+            else 
+              self.dfs_stack.pop
+              break if dfs_stack.empty? 
+            end
+
+          else
+            n = Node.new(eachnode)
+            self.dfs_stack.push(n)
+            self.explored_list[n.label()] = n
+            self.adj_list[top_guy.label].delete(eachnode)
+            self.leader_node_list[@current_leader] += [n.label]
+            break
+          end
+        }
+      end
     end
     
   end
   
+  def iDFS_grev node
+    self.explored_list[node.label] = node
+    self.dfs_stack().push(node)
+    
+    until self.dfs_stack.empty?
+      top_guy = self.dfs_stack.peek
+      
+      l = self.adj_list[top_guy.label]
+      #if top guy has no neighbors, pop him out
+      if l.nil? or l.empty?
+        #update current finish time and the finish time list
+        @current_finish_time += 1
+        n = self.dfs_stack.pop
+        self.finish_time_list[@current_finish_time] = n.label
+      else
+        l.each { |eachnode|
+          #if the node has been explored, check if there are other
+          #unexplored neighbors for top guy
+          #if yes, continue with next neighbor. 
+          #else, start popping and update finish times.
+          if self.explored_list().has_key?(eachnode)
+#            has_unvisited_node = false
+#            self.adj_list[top_guy.label].each { |i| has_unvisited_node = true unless self.explored_list().has_key?(i) }
+#            
+#            if has_unvisited_node
+#              next
+            if !self.adj_list[top_guy.label].empty?
+              next
+            else 
+              #update current finish time and the finish time list
+              @current_finish_time += 1
+              n = self.dfs_stack.pop
+              self.finish_time_list[@current_finish_time] = n.label
+              break if dfs_stack.empty?
+            end
+          #if the node is unexplored, then create a new node object,
+          #mark it as explored and push into stack
+          else
+            n = Node.new(eachnode)
+            self.dfs_stack.push(n)
+            self.explored_list[n.label()] = n
+            self.adj_list[top_guy.label].delete(eachnode)
+            break
+          end
+        }
+      end
+    end
+  end
   
 end
     
 class Node
-  attr_accessor :label, :explored, :leader
+  attr_accessor :label
   
   def initialize(key)
     self.label=(key)
-    self.explored=(false)
   end
   
 end
