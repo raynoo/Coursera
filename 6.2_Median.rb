@@ -9,7 +9,7 @@ include Containers
 
 def init
   @arr = Array.new
-  File.open('6input.txt', 'r').each_line do |line|
+  File.open('6input2.txt', 'r').each_line do |line|
     @arr.push(line.to_i);
   end
   
