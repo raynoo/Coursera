@@ -1,4 +1,4 @@
 Coursera
 ========
 
-Assignments for Algorithm 1 course
+Assignments that I submitted for some courses I took up on Coursera.
