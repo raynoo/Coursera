@@ -1,4 +1,4 @@
-#http://www.codeskulptor.org/#user13_GDgBrY94OBPUpGI.py
+#http://www.codeskulptor.org/#user15_SCOowZxwF3_1.py
 
 #Mini-project 4: Implementation of classic arcade game "Pong"
 #to be run on www.codeskulptor.org
@@ -175,33 +175,33 @@ def draw(c):
 def keydown(key):
     global PADDLE_VEL, PADDLE_LEFT_POS, PADDLE_RIGHT_POS, restart, message
     global PADDLE_LEFT_VEL, PADDLE_RIGHT_VEL
-    vel_step = 20
+    
+    velocity = 6
+    
     #move padleft up
     if(key == simplegui.KEY_MAP["w"]):
-#        PADDLE_LEFT_POS[1] -= PADDLE_VEL
-        PADDLE_LEFT_VEL += vel_step
+        PADDLE_LEFT_VEL -= velocity
         if restart:
             restart = False
             throw_ball(False)
     
     #move padleft down
     if(key == simplegui.KEY_MAP["s"]):
-#        PADDLE_LEFT_POS[1] += PADDLE_VEL
-        PADDLE_LEFT_VEL += vel_step
+        PADDLE_LEFT_VEL += velocity
         if restart:
             restart = False
             throw_ball(False)
     
     #move padright up
     if(key == simplegui.KEY_MAP["up"]):
-        PADDLE_RIGHT_POS[1] -= PADDLE_VEL
+        PADDLE_RIGHT_VEL -= velocity
         if restart:
             restart = False
             throw_ball(True)
     
     #move padright down
     if(key == simplegui.KEY_MAP["down"]):
-        PADDLE_RIGHT_POS[1] += PADDLE_VEL
+        PADDLE_RIGHT_VEL += velocity
         if restart:
             restart = False
             throw_ball(True)
@@ -210,20 +210,19 @@ def keydown(key):
 
 def keyup(key):
     global PADDLE_LEFT_POS, PADDLE_RIGHT_POS, PADDLE_VEL
+    global PADDLE_LEFT_VEL, PADDLE_RIGHT_VEL
     
     if(key == simplegui.KEY_MAP["w"]):
-#        PADDLE_LEFT_POS[1] -= 10
-        PADDLE_VEL = 0
+        PADDLE_LEFT_VEL = 0
     
     if(key == simplegui.KEY_MAP["s"]):
-#        PADDLE_LEFT_POS[1] += 10
-        PADDLE_VEL = 0
+        PADDLE_LEFT_VEL = 0
     
     if(key == simplegui.KEY_MAP["up"]):
-        PADDLE_RIGHT_POS[1] -= 10
+        PADDLE_RIGHT_VEL = 0
     
     if(key == simplegui.KEY_MAP["down"]):
-        PADDLE_RIGHT_POS[1] += 10
+        PADDLE_RIGHT_VEL = 0
 
 def tick():
     global time
